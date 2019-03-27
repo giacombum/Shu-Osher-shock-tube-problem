@@ -5,6 +5,7 @@ program integrate_euler_1D
 !-----------------------------------------------------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------------------------------------------------
+use omp_lib
 use IR_Precision, only : R_P, I_P, FR_P, str
 use type_euler_1D, only : euler_1D
 use Data_Type_Command_Line_Interface, only : Type_Command_Line_Interface
@@ -20,6 +21,7 @@ type(euler_1D)                  :: rk_stage(1:rk_stages) !< Runge-Kutta stages.
 real(R_P)                       :: Dt                    !< Time step.
 real(R_P)                       :: t                     !< Time.
 real(R_P)                       :: t_final               !< Final time.
+real(R_P)                       :: t_wall                !< Wall time for OpenMP.
 type(euler_1D)                  :: domain                !< Domain of Euler equations.
 integer(I_P)                    :: order                 !< Order of accuracy.
 real(R_P),    parameter         :: CFL=0.7_R_P           !< CFL value.
@@ -32,6 +34,7 @@ logical                         :: plots                 !< Flag for activating 
 logical                         :: results               !< Flag for activating results saving.
 logical                         :: time_serie            !< Flag for activating time serie-results saving.
 logical                         :: verbose               !< Flag for activating more verbose output.
+logical                         :: timer                 !< Flag for activating timing.
 integer(I_P)                    :: steps                 !< Time steps counter.
 !-----------------------------------------------------------------------------------------------------------------------------------
 
@@ -39,6 +42,7 @@ integer(I_P)                    :: steps                 !< Time steps counter.
 call command_line_interface
 call init
 steps = 1
+t_wall = OMP_GET_WTIME()
 do while(t<t_final)
   if (verbose) print "(A)", ' Time step: '//str(n=dt)//', Time: '//str(n=t)
   Dt = domain%dt(Nmax=0_I_P, Tmax=t_final, t=t, CFL=CFL)
@@ -47,7 +51,9 @@ do while(t<t_final)
   steps = steps + 1
   call save_time_serie(t=t)
 enddo
+t_wall = OMP_GET_WTIME() - t_wall
 if (verbose) print "(A)", ' Time step: '//str(n=dt)//', Time: '//str(n=t)
+if (timer)   print "(A)", ' Wall Time: '//str(n=t_wall)
 call finish
 stop
 !-----------------------------------------------------------------------------------------------------------------------------------
@@ -80,6 +86,7 @@ contains
   call cli%add(switch='--tserie', switch_ab='-t', help='Save time-serie-results', required=.false., act='store_true', &
                def='.false.', error=error)
   call cli%add(switch='--verbose', help='Verbose output', required=.false., act='store_true', def='.false.', error=error)
+  call cli%add(switch='--timer', help='Timer output', required=.false., act='store_true', def='.false.', error=error)
   ! parsing Command Line Interface
   call cli%parse(error=error)
   call cli%get(switch='--Ni', val=Ni, error=error) ; if (error/=0) stop
@@ -89,6 +96,7 @@ contains
   call cli%get(switch='-p', val=plots, error=error) ; if (error/=0) stop
   call cli%get(switch='-t', val=time_serie, error=error) ; if (error/=0) stop
   call cli%get(switch='--verbose', val=verbose, error=error) ; if (error/=0) stop
+  call cli%get(switch='--timer', val=timer, error=error) ; if (error/=0) stop
   return
   !---------------------------------------------------------------------------------------------------------------------------------
   endsubroutine command_line_interface

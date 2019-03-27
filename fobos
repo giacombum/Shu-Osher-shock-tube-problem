@@ -6,16 +6,17 @@ modes = gnu gnu-debug
 [common-variables]
 $CSTATIC_GNU     = -cpp -c -frealloc-lhs
 $CSTATIC_INT     = -cpp -c -assume realloc_lhs
-$DEBUG_GNU       = -O0 -g3 -Warray-bounds -Wcharacter-truncation -Wline-truncation -Wimplicit-interface -Wimplicit-procedure -Wunderflow -Wuninitialized -fcheck=all -fmodule-private -ffree-line-length-132 -fimplicit-none -fbacktrace -fdump-core -finit-real=nan -std=f2008 -fall-intrinsics
-$DEBUG_INT       = -O0 -debug all -check all -warn all -extend-source 132 -traceback -gen-interfaces -fp-stack-check -fstack-protector-all -ftrapuv -no-ftz -std08
-$OPTIMIZE        = -O2
+$DEBUG_GNU       = -O0 -g3 -Warray-bounds -Wcharacter-truncation -Wline-truncation -Wimplicit-interface -Wimplicit-procedure -Wunderflow -Wuninitialized -fcheck=all -fmodule-private -ffree-line-length-132 -fimplicit-none -fbacktrace -fdump-core -finit-real=nan -std=f2008 -fall-intrinsics -fopenmp
+$DEBUG_INT       = -O0 -debug all -check all -warn all -extend-source 132 -traceback -gen-interfaces -fp-stack-check -fstack-protector-all -ftrapuv -no-ftz -std08 -qopenmp
+$OPTIMIZE_GNU    = -O3 -fopenmp
+$OPTIMIZE_INT    = -O2 -qopenmp
 
 # main modes
 [gnu]
 help            = Build in release mode with GNU gfortran
 compiler        = gnu
-cflags          = $CSTATIC_GNU $OPTIMIZE
-lflags          = $OPTIMIZE
+cflags          = $CSTATIC_GNU $OPTIMIZE_GNU
+lflags          = $OPTIMIZE_GNU
 cflags_heritage = True
 build_dir       = build
 mod_dir         = mod
@@ -44,8 +45,8 @@ jobs            = 10
 [intel]
 help            = Build in release mode with Intel Fortran
 compiler        = intel
-cflags          = $CSTATIC_INT $OPTIMIZE
-lflags          = $OPTIMIZE
+cflags          = $CSTATIC_INT $OPTIMIZE_INT
+lflags          = $OPTIMIZE_INT
 cflags_heritage = True
 build_dir       = build
 mod_dir         = mod
@@ -74,8 +75,8 @@ jobs            = 10
 [gnu-coverage]
 help            = Build in release-coverage mode with GNU gfortran
 compiler        = gnu
-cflags          = $CSTATIC_GNU $OPTIMIZE
-lflags          = $OPTIMIZE
+cflags          = $CSTATIC_GNU $OPTIMIZE_GNU
+lflags          = $OPTIMIZE_GNU
 coverage        = True
 cflags_heritage = True
 build_dir       = build
@@ -111,8 +112,24 @@ rule_18 = gcov -o ./build/obj/ src/Euler-1D/*.f90
 rule_19 = FoBiS.py rule -gcov_analyzer profiling/Ni_2048-Order_1 Coverage-Analysis
 rule_20 = rm -rf *.gcov build*
 
+# rules
 [rule-makedoc]
-help   = Rule for building documentation from source files
+help   = Build documentation from source files
 rule_1 = rm -rf doc/html/*
-rule_2 = ford doc/main_page.md
+rule_2 = ford doc/main_page.md --debug
 rule_3 = cp -r doc/html/publish/* doc/html/
+rule_4 = rm -rf doc/html/publish
+
+[rule-deldoc]
+help = Delete documentation
+rule = rm -rf doc/html/*
+
+[rule-delexe]
+help = Delete exes
+rule = rm -rf build/
+
+[rule-clean]
+help = Clean the project tree
+rule_1 = FoBiS.py rule -ex deldoc
+rule_2 = FoBiS.py rule -ex delexe
+rule_3 = rm -f *.gcov
