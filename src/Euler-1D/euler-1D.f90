@@ -53,7 +53,12 @@ do while(t<t_final)
 enddo
 t_wall = OMP_GET_WTIME() - t_wall
 if (verbose) print "(A)", ' Time step: '//str(n=dt)//', Time: '//str(n=t)
-if (timer)   print "(A)", ' Wall Time: '//str(n=t_wall)
+if (timer)   then
+   print "(A)", ' ********************************* '
+   print "(A)", '   Final Time: '//str(n=t)
+   print "(A)", '    Wall Time: '//str(n=t_wall)
+   print "(A)", ' ********************************* '
+endif
 call finish
 stop
 !-----------------------------------------------------------------------------------------------------------------------------------
